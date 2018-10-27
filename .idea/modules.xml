@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/bpnn.iml" filepath="$PROJECT_DIR$/.idea/bpnn.iml" />
+      <module fileurl="file://$USER_HOME$/PycharmProjects/tensorflow_test/.idea/tensorflow_test.iml" filepath="$USER_HOME$/PycharmProjects/tensorflow_test/.idea/tensorflow_test.iml" />
     </modules>
   </component>
 </project>
