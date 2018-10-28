@@ -3,7 +3,7 @@ import numpy as np
 import networkx as nx
 import copy
 from sklearn.model_selection import train_test_split
-
+from sklearn.metrics import recall_score
 training_epochs = 50
 n_neurons_in_h1 = 60
 n_neurons_in_h2 = 60
@@ -12,7 +12,7 @@ learning_rate = 0.01
 n_features = 3
 n_classes = 2
 
-attributes_name = ['reviewerID', 'friends_num', 'reviews_num', 'photo_num', ]
+attributes_name = ['reviewerID', 'friends_num', 'reviews_num', 'photo_num',]
 shuffle_stat = 42
 trainset_size = 0.8
 
@@ -95,11 +95,17 @@ with tf.Session() as sess:
             x_batch = tr_feature[start:end]
             y_batch = tr_label[start:end]
 
-            sess.run(train_step, feed_dict={X: x_batch, Y: y_batch, keep_prob: 0.5})
+            sess.run(train_step, feed_dict={X: x_batch, Y: y_batch, keep_prob: 0.2})
 
         y_pred = sess.run(tf.argmax(a, 1), feed_dict={X: ts_feature, keep_prob: 1.0})
         y_true = sess.run(tf.argmax(ts_label, 1))
         acc = sess.run(accuracy, feed_dict={X: ts_feature, Y: ts_label, keep_prob: 1.0})
+
+        # for i, j in zip(y_pred, y_true):
+        #     if i == 0 and j == 1:
+        #         print('there is mistake 1')
+
+        print('recall rate', recall_score(y_true, y_pred))
         print('epoch', epoch, acc)
         print('---------------')
         # print(y_pred, y_true)
