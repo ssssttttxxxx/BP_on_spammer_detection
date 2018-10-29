@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import networkx as nx
+import time
 import copy
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import recall_score
@@ -9,7 +10,7 @@ n_neurons_in_h1 = 60
 n_neurons_in_h2 = 60
 learning_rate = 0.01
 
-n_features = 3
+n_features = 5
 n_classes = 2
 
 attributes_name = ['reviewerID', 'friends_num', 'reviews_num', 'photo_num',]
@@ -37,6 +38,45 @@ def split_train_test(graph, attributes):
     X_train, X_test, Y_train, Y_test = train_test_split(X_list, Y_list, test_size=1 - trainset_size)
 
     return X_train, X_test, Y_train, Y_test
+
+
+def remove_test_label(graph, delete_list):
+    """
+    remove the test set label on the graph data
+    :param graph:
+    :param delete_list:
+    :return:
+    """
+
+    print("remove test set label")
+    print(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time())))
+
+    current_graph = graph.copy()
+    for node in delete_list:
+        current_graph.node[node[0]]['fake'] = 'unknown'
+        # print 'remove label of %s' % node[0]
+    return current_graph
+
+
+def compute_attribute(current_graph, node):
+    """
+    compute attributes according to current network
+    :param current_graph:
+    :param node:
+    :return:
+    """
+    neighbors = current_graph.neighbors(node)
+    number_of_spammers = 0
+    number_of_non_spammers = 0
+
+    for neighbor in neighbors:
+        if current_graph.node[neighbor]['fake'] == 1:
+            number_of_spammers += 1
+        elif current_graph.node[neighbor]['fake'] == 0:
+            number_of_non_spammers += 1
+        else:
+            continue
+    return number_of_spammers, number_of_non_spammers
 
 
 X = tf.placeholder(tf.float32, [None, n_features], name='features')
@@ -76,6 +116,43 @@ with tf.Session() as sess:
     path = 'graph/friendship_reviewer_label_attr_clean_unknown.pickle'
     graph = nx.read_gpickle(path)
     X_train, X_test, Y_train, Y_test = split_train_test(graph, attributes_name)
+
+    current_graph = remove_test_label(graph, X_test)
+
+    # compute relational attributes using only known nodes
+
+    time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+    zero_zero_num = 0
+
+    for l in X_train:
+        node_id = l[0]
+
+        number_of_spammers, number_of_non_spammers = compute_attribute(current_graph, node_id)
+
+        if number_of_non_spammers == 0 and number_of_spammers == 0:
+            zero_zero_num += 1
+
+        current_graph.node[node_id]['spammer_neighbors_num'] = number_of_spammers
+        current_graph.node[node_id]['non_spammer_neighbors_num'] = number_of_non_spammers
+        l.append(number_of_spammers)
+        l.append(number_of_non_spammers)
+    print('0-0 number', zero_zero_num)
+    X_train_without_id = [node[1:] for node in X_train]
+
+    for l in X_test:
+        node_id = l[0]
+
+        number_of_spammers, number_of_non_spammers = compute_attribute(current_graph, node_id)
+
+        if number_of_non_spammers == 0 and number_of_spammers == 0:
+            zero_zero_num += 1
+
+        current_graph.node[node_id]['spammer_neighbors_num'] = number_of_spammers
+        current_graph.node[node_id]['non_spammer_neighbors_num'] = number_of_non_spammers
+        l.append(number_of_spammers)
+        l.append(number_of_non_spammers)
+
+    #######################################################
 
     tr_feature = [X[1:] for X in X_train]
     tr_label_to_onehot = tf.one_hot(Y_train, n_classes, 1, 0)
