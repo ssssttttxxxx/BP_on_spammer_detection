@@ -136,8 +136,9 @@ with tf.Session() as sess:
         current_graph.node[node_id]['non_spammer_neighbors_num'] = number_of_non_spammers
         l.append(number_of_spammers)
         l.append(number_of_non_spammers)
+
     print('0-0 number', zero_zero_num)
-    X_train_without_id = [node[1:] for node in X_train]
+    # X_train_without_id = [node[1:] for node in X_train]
 
     for l in X_test:
         node_id = l[0]
