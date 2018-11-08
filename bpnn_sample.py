@@ -79,6 +79,36 @@ def compute_attribute(current_graph, node):
     return number_of_spammers, number_of_non_spammers
 
 
+def over_sampling(X_train, X_label):
+    """
+    balance the training set
+    :param X_train: list
+    :param X_label: list
+    :return: list, list
+    """
+    spammer_list = list()
+    non_spammer_list = list()
+
+    sampled_train_list = list()
+    sampled_label_list = list()
+
+    for attrs, label in zip(X_train, X_label):
+        if label == 1:
+            spammer_list.append(attrs)
+        elif label == 0:
+            non_spammer_list.append(attrs)
+
+    for i in range(len(X_train)):
+        if i % 2 == 0:
+            sampled_train_list.append(random.sample(spammer_list, 1)[0])
+            sampled_label_list.append(int(1))
+        else:
+            sampled_train_list.append(random.sample(non_spammer_list, 1)[0])
+            sampled_label_list.append(int(0))
+
+    return sampled_train_list, sampled_label_list
+
+
 X = tf.placeholder(tf.float32, [None, n_features], name='features')
 Y = tf.placeholder(tf.float32, [None, n_classes], name='labels')
 keep_prob = tf.placeholder("float")
@@ -137,6 +167,7 @@ with tf.Session() as sess:
         l.append(number_of_spammers)
         l.append(number_of_non_spammers)
 
+    X_train, Y_train = over_sampling(X_train, Y_train)
     print('0-0 number', zero_zero_num)
     # X_train_without_id = [node[1:] for node in X_train]
 
