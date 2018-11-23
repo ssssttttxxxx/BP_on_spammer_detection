@@ -2,9 +2,12 @@ import tensorflow as tf
 import numpy as np
 import networkx as nx
 import time
+import random
+from collections import Counter
 import copy
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import recall_score
+from imblearn.over_sampling import SMOTE, RandomOverSampler
 training_epochs = 50
 n_neurons_in_h1 = 60
 n_neurons_in_h2 = 60
@@ -109,6 +112,17 @@ def over_sampling(X_train, X_label):
     return sampled_train_list, sampled_label_list
 
 
+def SMOTE_over_sampling(X_train, X_label):
+    # X_train = np.array(X_train).astype(float)
+    # X_label = np.array(X_label).astype(float)
+    print('Original dataset shape {}'.format(Counter(X_label)))
+
+    sm = RandomOverSampler(random_state=shuffle_stat)
+    over_samples_X, over_samples_Y = sm.fit_sample(X_train, X_label)
+    print("After OverSampling, counts of label '1': {}".format(sum(over_samples_Y == 1)))
+    print("After OverSampling, counts of label '0': {}".format(sum(over_samples_Y == 0)))
+    return over_samples_X, over_samples_Y
+
 X = tf.placeholder(tf.float32, [None, n_features], name='features')
 Y = tf.placeholder(tf.float32, [None, n_classes], name='labels')
 keep_prob = tf.placeholder("float")
@@ -143,7 +157,8 @@ initial = tf.global_variables_initializer()
 with tf.Session() as sess:
     sess.run(initial)
 
-    path = 'graph/friendship_reviewer_label_attr_clean_unknown.pickle'
+    # path = 'graph/friendship_reviewer_label_attr_clean_unknown.pickle'
+    path = '../spammer_detection/graph/high_degree_partition_2.pickle'
     graph = nx.read_gpickle(path)
     X_train, X_test, Y_train, Y_test = split_train_test(graph, attributes_name)
 
@@ -167,7 +182,6 @@ with tf.Session() as sess:
         l.append(number_of_spammers)
         l.append(number_of_non_spammers)
 
-    X_train, Y_train = over_sampling(X_train, Y_train)
     print('0-0 number', zero_zero_num)
     # X_train_without_id = [node[1:] for node in X_train]
 
@@ -185,6 +199,11 @@ with tf.Session() as sess:
         l.append(number_of_non_spammers)
 
     #######################################################
+
+    # over_sampling
+    # X_train, Y_train = SMOTE_over_sampling(X_train, Y_train)
+    # print('Original testset shape {}'.format(Counter(Y_test)))
+
 
     tr_feature = [X[1:] for X in X_train]
     tr_label_to_onehot = tf.one_hot(Y_train, n_classes, 1, 0)
